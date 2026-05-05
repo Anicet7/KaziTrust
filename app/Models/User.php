@@ -31,6 +31,9 @@ class User extends Authenticatable  implements HasTenants , FilamentUser
         'name',
         'email',
         'password',
+
+        'tenant_id', // ✅ ajouté
+        'role',      // ✅ ajouté
     ];
 
     /**
@@ -65,6 +68,12 @@ class User extends Authenticatable  implements HasTenants , FilamentUser
     // Méthode requise par Filament pour lister les tenants de l'utilisateur
     public function getTenants(Panel $panel): array|Collection
     {
+
+       // Superadmin n'a pas de tenant
+        if ($this->role === 'superadmin') {
+            return [];
+        }
+
         // Si l'utilisateur a un tenant assigné, on le retourne dans un tableau
         return $this->tenant ? [$this->tenant] : [];
     }
@@ -72,11 +81,20 @@ class User extends Authenticatable  implements HasTenants , FilamentUser
     // Méthode requise par Filament pour vérifier l'accès
     public function canAccessTenant(Model $tenant): bool
     {
+
+      // Superadmin accède à tout, client seulement à son tenant
+        if ($this->role === 'superadmin') {
+            return true;
+        }
+
         return $this->tenant_id === $tenant->id;
+
+        
     }
 
 
     // 2. Ajouter la méthode requise par l'interface
+    /*
     public function canAccessPanel(Panel $panel): bool
     {
         // Ici, vous définissez qui peut entrer. 
@@ -84,5 +102,53 @@ class User extends Authenticatable  implements HasTenants , FilamentUser
         // Ou plus simplement pour le moment :
         return true; 
     }
+    */
     
+
+    // app/Models/User.php
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return match ($panel->getId()) {
+            'supramanager' => $this->role === 'superadmin',
+            'management'   => in_array($this->role, ['admin', 'developer', 'viewer']),
+            default        => false,
+        };
+    }
+
+
+
+    ///
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isDeveloper(): bool
+    {
+        return $this->role === 'developer';
+    }
+
+    public function isViewer(): bool
+    {
+        return $this->role === 'viewer';
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
+
+    public function canManageApps(): bool
+    {
+        return in_array($this->role, ['admin', 'developer']);
+    }
+
+    public function canManageTeam(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+
+
 }

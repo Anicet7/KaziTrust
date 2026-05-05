@@ -26,6 +26,7 @@ class SupramanagerPanelProvider extends PanelProvider
             ->id('supramanager')
             ->path('supramanager')
             ->login()
+           
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -35,10 +36,18 @@ class SupramanagerPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Supramanager/Widgets'), for: 'App\\Filament\\Supramanager\\Widgets')
+            /*
             ->widgets([
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
             ])
+            */    
+
+            ->widgets([
+                \App\Filament\Supramanager\Widgets\GlobalStatsWidget::class,
+                Widgets\AccountWidget::class,
+            ])
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -52,6 +61,10 @@ class SupramanagerPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+             // ✅ Ajouter juste après :
+            ->authGuard('web')
+            ;
+            
     }
 }

@@ -6,8 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Traits\BelongsToTenant; 
 
+/**
+ * @method static \Illuminate\Database\Eloquent\Builder where($column, $operator = null, $value = null, $boolean = 'and')
+ * @method static \Illuminate\Database\Eloquent\Builder whereIn($column, $values, $boolean = 'and', $not = false)
+ */
 class App extends Model 
 {
+
+    use BelongsToTenant;
+    
     
     protected $fillable = [
         'tenant_id', 'name', 'uuid', 'is_active', 
@@ -41,4 +48,9 @@ class App extends Model
     public function apiKeys() {
         return $this->hasMany(AppApiKey::class);
     }
-}
+
+
+    public function trustLogs() { return $this->hasMany(TrustLog::class); }
+
+
+ }

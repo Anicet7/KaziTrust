@@ -78,4 +78,64 @@ class Tenant extends Model
 
         return $this->subscription_plan !== 'trial' || $this->onTrial();
     }
+
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class)->latest();
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class)->latest();
+    }
+
+    /**
+     * La souscription active ou en essai (la plus récente)
+     */
+    public function activeSubscription()
+    {
+        return $this->hasOne(Subscription::class)
+            ->whereIn('status', ['active', 'trial'])
+            ->latest();
+    }
+
+    /* -----------------------------------------------------------------
+     |  Méthodes métier
+     | ----------------------------------------------------------------- */
+
+    /**
+     * Raccourci : peut utiliser l'API ?
+     */
+    public function canUseApi(): bool
+    {
+        if (!$this->is_active) return false;
+
+        $sub = $this->activeSubscription;
+        return $sub ? $sub->canUseApi() : false;
+    }
+
+    /**
+     * Récupère le plan actif (ou null)
+     */
+    public function currentPlan(): ?Plan
+    {
+        return $this->activeSubscription?->plan;
+    }
+
+    /**
+     * Crée une souscription trial lors de l'inscription
+     */
+    public function startTrial(Plan $trialPlan): Subscription
+    {
+        return $this->subscriptions()->create([
+            'plan_id'       => $trialPlan->id,
+            'status'        => 'trial',
+            'trial_ends_at' => now()->addDays(14),
+            'starts_at'     => now(),
+            'billing_cycle' => 'monthly',
+            'price_paid'    => 0,
+        ]);
+    }
+
 }

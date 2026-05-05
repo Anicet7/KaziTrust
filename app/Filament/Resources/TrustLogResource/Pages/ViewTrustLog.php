@@ -9,11 +9,4 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewTrustLog extends ViewRecord
 {
     protected static string $resource = TrustLogResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            Actions\EditAction::make(),
-        ];
-    }
 }

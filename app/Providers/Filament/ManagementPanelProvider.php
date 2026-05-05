@@ -19,7 +19,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 use App\Models\Tenant;
-
+use App\Filament\Pages\Auth\CustomRegister;
 
 class ManagementPanelProvider extends PanelProvider
 {
@@ -30,8 +30,18 @@ class ManagementPanelProvider extends PanelProvider
             ->id('management')
             ->path('management')
             ->login()
-           
+            ->registration(CustomRegister::class)
+            ->passwordReset()
            /// ->tenant(Tenant::class) 
+
+           ->brandName('KaziTrust B2B')
+            ->brandLogoHeight('2rem') //  logo : ->brandLogo(asset('images/logo.png'))
+            /*->colors([
+                'primary' => \Filament\Support\Colors\Color::Blue, // Un bleu pro (Banque/Tech)
+            ])
+                */
+            ->font('Inter')
+            
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -41,10 +51,20 @@ class ManagementPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            /*
             ->widgets([
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
             ])
+             */   
+
+            ->widgets([
+                \App\Filament\Widgets\SubscriptionWidget::class,
+                \App\Filament\Widgets\StatsOverviewWidget::class,
+                \App\Filament\Widgets\AnalysisChartWidget::class,
+                \App\Filament\Widgets\RecentLogsWidget::class,
+            ])
+
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

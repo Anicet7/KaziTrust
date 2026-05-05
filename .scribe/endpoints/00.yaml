@@ -1,0 +1,52 @@
+name: Statut
+description: |-
+
+  Vérifier l'état opérationnel de l'API.
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/status
+    metadata:
+      custom: []
+      groupName: Statut
+      groupDescription: |-
+
+        Vérifier l'état opérationnel de l'API.
+      subgroup: ''
+      subgroupDescription: ''
+      title: "Statut de l'API"
+      description: |-
+        Retourne l'état de l'API et la version courante.
+        Aucune authentification requise.
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+      X-KaziTrust-Version: v1
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: |-
+          {
+            "status": "operational",
+            "version": "1.0.0",
+            "timestamp": "2026-05-03T12:00:00Z"
+          }
+        headers: []
+        description: ''
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
