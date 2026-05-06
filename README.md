@@ -273,3 +273,9 @@ NOKIA_CLIENT_SECRET=votre_client_secret_nokia
 Comme vous travaillez sur la **détection de fraude**, assurez-vous d'utiliser l'API **"SIM Swap"** ou **"Location Verification"** de Nokia. Ce sont ces APIs qui nécessitent ces variables pour confirmer si une carte SIM a été changée récemment, ce qui est un indicateur fort de fraude mobile.
 
 Si vous avez un doute sur la validité d'une clé, testez-la d'abord via le bouton "Test Endpoint" directement sur RapidAPI avant de la mettre dans votre Laravel.
+
+
+
+#### LANGUE 
+#### php artisan vendor:publish --tag=filament-panels-translations
+####

@@ -21,6 +21,11 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Models\Tenant;
 use App\Filament\Pages\Auth\CustomRegister;
 
+
+use App\Filament\Pages\Auth\CustomLogin;
+
+
+
 class ManagementPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -29,9 +34,12 @@ class ManagementPanelProvider extends PanelProvider
             ->default()
             ->id('management')
             ->path('management')
-            ->login()
+            // ->login()
+            ->login(CustomLogin::class)  
             ->registration(CustomRegister::class)
             ->passwordReset()
+
+
            /// ->tenant(Tenant::class) 
 
            ->brandName('KaziTrust B2B')
@@ -43,7 +51,8 @@ class ManagementPanelProvider extends PanelProvider
             ->font('Inter')
             
             ->colors([
-                'primary' => Color::Amber,
+                //'primary' => Color::Amber,
+                 'primary' => Color::Blue,  
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
