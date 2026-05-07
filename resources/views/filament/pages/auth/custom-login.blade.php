@@ -473,6 +473,25 @@
         .kz-back-link:hover { color: #64748B; }
         .kz-back-link svg { transition: transform 0.2s; }
         .kz-back-link:hover svg { transform: translateX(-3px); }
+
+
+
+                /* ── Mode sombre ── */
+        .dark html, .dark body          { background: #0F172A !important; }
+        .dark .kz-login                 { background: #0F172A; }
+        .dark .kz-form-side             { background: #0F172A; }
+        .dark .kz-form-side             { border-left-color: rgba(255,255,255,0.05) !important; }
+        .dark .kz-lang-switch           { background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.07); }
+        .dark .kz-brand-name            { color: #E2E8F0; }
+        .dark .kz-title                 { color: #F1F5F9; }
+        .dark .fi-input-wrp input,
+        .dark .fi-input                 { background: #1E293B !important; border-color: rgba(148,163,184,0.12) !important; color: #E2E8F0 !important; }
+        .dark .fi-input-wrp input::placeholder { color: #334155 !important; }
+        .dark .fi-fo-field-wrp > label,
+        .dark .fi-label, .dark label[for] { color: #94A3B8 !important; }
+        .dark .kz-back-link             { color: #334155; }
+
+
     </style>
 
 

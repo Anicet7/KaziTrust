@@ -6,6 +6,9 @@ use App\Filament\Supramanager\Resources\PlanResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
+use App\Filament\Supramanager\Widgets\PlanStatsWidget; 
+
+
 class ListPlans extends ListRecords
 {
     protected static string $resource = PlanResource::class;
@@ -16,4 +19,15 @@ class ListPlans extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+
+       protected function getHeaderWidgets(): array
+    {
+        return [
+            
+           // PlanStatsWidget::class,
+        ];
+    }
+
+
 }

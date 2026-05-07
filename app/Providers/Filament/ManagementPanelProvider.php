@@ -42,7 +42,7 @@ class ManagementPanelProvider extends PanelProvider
 
            /// ->tenant(Tenant::class) 
 
-           ->brandName('KaziTrust B2B')
+           ->brandName('KaziTrust')
             ->brandLogoHeight('2rem') //  logo : ->brandLogo(asset('images/logo.png'))
             /*->colors([
                 'primary' => \Filament\Support\Colors\Color::Blue, // Un bleu pro (Banque/Tech)
@@ -54,6 +54,10 @@ class ManagementPanelProvider extends PanelProvider
                 //'primary' => Color::Amber,
                  'primary' => Color::Blue,  
             ])
+             ->renderHook(
+                'panels::head.end',
+                fn () => view('filament.kz-theme'),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -68,8 +72,12 @@ class ManagementPanelProvider extends PanelProvider
              */   
 
             ->widgets([
+
+                 \App\Filament\Widgets\WelcomeBannerWidget::class,
+                 \App\Filament\Widgets\StatsOverviewWidget::class,
+
                 \App\Filament\Widgets\SubscriptionWidget::class,
-                \App\Filament\Widgets\StatsOverviewWidget::class,
+               // \App\Filament\Widgets\StatsOverviewWidget::class,
                 \App\Filament\Widgets\AnalysisChartWidget::class,
                 \App\Filament\Widgets\RecentLogsWidget::class,
             ])

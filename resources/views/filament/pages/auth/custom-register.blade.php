@@ -283,6 +283,24 @@ html, body {
 .kz-back:hover { color: #64748B; }
 .kz-back svg { transition: transform 0.2s; }
 .kz-back:hover svg { transform: translateX(-3px); }
+
+
+/* ── Mode sombre ── */
+.dark html, .dark body          { background: #0F172A !important; }
+.dark .kz-reg                   { background: #0F172A; }
+.dark .kz-reg-form-side         { background: #0F172A; }
+.dark .kz-reg-form-side         { border-left-color: rgba(255,255,255,0.05) !important; }
+.dark .kz-lang                  { background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.07); }
+.dark .kz-brand-name            { color: #E2E8F0; }
+.dark .kz-reg-title             { color: #F1F5F9; }
+.dark .fi-input-wrp input,
+.dark .fi-input                 { background: #1E293B !important; border-color: rgba(148,163,184,0.12) !important; color: #E2E8F0 !important; }
+.dark .fi-input-wrp input::placeholder { color: #334155 !important; }
+.dark .fi-fo-field-wrp > label,
+
+.dark .kz-back                  { color: #334155; }
+
+
 </style>
 
 {{-- ═══════════════════════════════════════════════════════

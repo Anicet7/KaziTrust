@@ -4,6 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+
+/**
+ * @method static \Illuminate\Database\Eloquent\Builder where($column, $operator = null, $value = null, $boolean = 'and')
+ * @method static \Illuminate\Database\Eloquent\Builder whereIn($column, $values, $boolean = 'and', $not = false)
+ */
+
+
 class Payment extends Model
 {
     protected $fillable = [

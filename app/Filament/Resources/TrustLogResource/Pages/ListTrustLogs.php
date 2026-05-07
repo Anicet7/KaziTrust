@@ -9,4 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListTrustLogs extends ListRecords
 {
     protected static string $resource = TrustLogResource::class;
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            TrustLogResource\Widgets\TrustLogStatsWidget::class,
+        ];
+    }
+
 }

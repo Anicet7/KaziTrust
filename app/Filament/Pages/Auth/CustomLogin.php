@@ -48,4 +48,19 @@ class CustomLogin extends BaseLogin
         $this->dispatch('refresh-page');
        //-- $this->js('window.location.reload()');
     }
+
+
+
+    public function render(): \Illuminate\Contracts\View\View
+    {
+        // On force la classe 'dark' sur le HTML avant même que Livewire ne finisse le rendu
+        $this->js("
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+        ");
+
+        return parent::render();
+    }
+
+
 }

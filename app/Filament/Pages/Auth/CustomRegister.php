@@ -99,9 +99,22 @@ class CustomRegister extends BaseRegister
 
         // 4. Déclencher l'envoi de l'email de bienvenue
        /// Mail::to($user->email)->send(new WelcomeKaziTrust($user));
+        Mail::to($user->email)->queue(new WelcomeKaziTrust($user));
 
         return $user;
     }
+
+    public function render(): \Illuminate\Contracts\View\View
+    {
+        // On force la classe 'dark' sur le HTML avant même que Livewire ne finisse le rendu
+        $this->js("
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+        ");
+
+        return parent::render();
+    }
+
 }
 
 /*

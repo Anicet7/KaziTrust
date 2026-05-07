@@ -279,3 +279,7 @@ Si vous avez un doute sur la validité d'une clé, testez-la d'abord via le bout
 #### LANGUE 
 #### php artisan vendor:publish --tag=filament-panels-translations
 ####
+
+
+### Netoyage 
+### php artisan clear-compiled && php artisan optimize:clear && composer dump-autoload

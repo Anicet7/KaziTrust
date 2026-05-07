@@ -34,8 +34,12 @@ class SupramanagerPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Supramanager/Pages'), for: 'App\\Filament\\Supramanager\\Pages')
             ->pages([
                 Pages\Dashboard::class,
+                
             ])
-            ->discoverWidgets(in: app_path('Filament/Supramanager/Widgets'), for: 'App\\Filament\\Supramanager\\Widgets')
+           /// ->discoverWidgets(in: app_path('Filament/Supramanager/Widgets'), for: 'App\\Filament\\Supramanager\\Widgets')
+             ->brandName('KaziTrust ADMIN SAAS')
+            ->brandLogoHeight('2rem') //  logo : ->brandLogo(asset('images/logo.png'))
+          
             /*
             ->widgets([
                 Widgets\AccountWidget::class,
@@ -45,7 +49,9 @@ class SupramanagerPanelProvider extends PanelProvider
 
             ->widgets([
                 \App\Filament\Supramanager\Widgets\GlobalStatsWidget::class,
-                Widgets\AccountWidget::class,
+               // \App\Filament\Supramanager\Widgets\PlanStatsWidget::class,
+                // \App\Filament\Supramanager\Widgets\RevenueByPlanChartWidget::class,
+                //  Widgets\AccountWidget::class,
             ])
 
             ->middleware([

@@ -10,6 +10,7 @@ use App\Traits\BelongsToTenant;
  * @method static \Illuminate\Database\Eloquent\Builder where($column, $operator = null, $value = null, $boolean = 'and')
  * @method static \Illuminate\Database\Eloquent\Builder whereIn($column, $values, $boolean = 'and', $not = false)
  */
+
 class App extends Model 
 {
 

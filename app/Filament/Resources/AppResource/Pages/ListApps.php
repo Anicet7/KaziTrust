@@ -16,4 +16,12 @@ class ListApps extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            AppResource\Widgets\AppStatsWidget::class,
+        ];
+    }
+
 }

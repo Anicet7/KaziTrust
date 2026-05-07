@@ -16,6 +16,10 @@ use Illuminate\Support\Collection;
 
 use Filament\Models\Contracts\FilamentUser;
 
+/**
+ * @method static \Illuminate\Database\Eloquent\Builder where($column, $operator = null, $value = null, $boolean = 'and')
+ * @method static \Illuminate\Database\Eloquent\Builder whereIn($column, $values, $boolean = 'and', $not = false)
+ */
 
 class User extends Authenticatable  implements HasTenants , FilamentUser
 {

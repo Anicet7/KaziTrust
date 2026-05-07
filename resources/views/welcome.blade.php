@@ -57,10 +57,14 @@
                             500: '#f59e0b',
                         }
                     },
+
+                    /*
                     fontFamily: {
                         display: ['Syne', 'system-ui', 'sans-serif'],
                         sans: ['DM Sans', 'system-ui', 'sans-serif'],
                     },
+                    `*/
+                    
                     animation: {
                         'float': 'float 6s ease-in-out infinite',
                         'float-slow': 'float 9s ease-in-out infinite',
@@ -584,10 +588,10 @@
                 $logos = [
                     ['name'=>'Nokia', 'svg'=>'<svg viewBox="0 0 100 40" class="h-7 fill-current"><text y="32" font-size="28" font-family="Arial,sans-serif" font-weight="700" letter-spacing="-1">Nokia</text></svg>'],
                     ['name'=>'OpenAI', 'svg'=>'<svg viewBox="0 0 100 40" class="h-7 fill-current"><text y="30" font-size="22" font-family="Arial,sans-serif" font-weight="700">OpenAI</text></svg>'],
-                    ['name'=>'Laravel', 'svg'=>'<svg viewBox="0 0 100 40" class="h-7 fill-current"><text y="30" font-size="22" font-family="Arial,sans-serif" font-weight="700">Laravel</text></svg>'],
+                  
                     ['name'=>'Google Gemini', 'svg'=>'<svg viewBox="0 0 130 40" class="h-7 fill-current"><text y="30" font-size="22" font-family="Arial,sans-serif" font-weight="700">Gemini</text></svg>'],
                     ['name'=>'GSMA CAMARA', 'svg'=>'<svg viewBox="0 0 150 40" class="h-7 fill-current"><text y="30" font-size="20" font-family="Arial,sans-serif" font-weight="700">CAMARA API</text></svg>'],
-                    ['name'=>'FilamentPHP', 'svg'=>'<svg viewBox="0 0 160 40" class="h-7 fill-current"><text y="30" font-size="20" font-family="Arial,sans-serif" font-weight="700">FilamentPHP</text></svg>'],
+                 
                 ];
                 @endphp
                 {{-- Doubled for seamless loop --}}

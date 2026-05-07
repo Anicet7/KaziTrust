@@ -16,4 +16,13 @@ class ListUsers extends ListRecords
             Actions\CreateAction::make()->label('Inviter un membre'),
         ];
     }
+
+       protected function getHeaderWidgets(): array
+    {
+        return [
+            UserResource\Widgets\UserStatsWidget::class,
+        ];
+    }
+
+
 }
