@@ -112,7 +112,7 @@
     </ul>
 
     <ul class="toc-footer" id="last-updated">
-        <li>Dernière mise à jour : 07/05/2026</li>
+        <li>Dernière mise à jour : 08/05/2026</li>
     </ul>
 </div>
 
@@ -195,11 +195,6 @@ Vous pouvez tester chaque endpoint directement depuis cette page grâce au bouto
 <p>Obtenez votre clé API depuis le <strong>Tableau de Bord Tenant → Management → Mes Services API → Clés API</strong>.</p>
 <p>Toutes les clés KaziTrust sont préfixées <code>kz_</code> suivi de 32 caractères alphanumériques.
 Chaque clé est liée à un tenant isolé (votre entreprise) et ne donne accès qu'à vos données.</p>
-<p><strong>Environnements disponibles :</strong>
-| Environnement | Préfixe de clé | Base URL |
-|---|---|---|
-| Sandbox | <code>kz_test_</code> | <code>https://sandbox.kazitrust.io</code> |
-| Production | <code>kz_live_</code> | <code>https://api.kazitrust.io</code> |</p>
 
         <h1 id="analyse-de-confiance">Analyse de confiance</h1>
 
