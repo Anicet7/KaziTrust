@@ -746,8 +746,8 @@
                 ['icon'=>'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
                   'color'=>'green',
                   'fr_t'=>'Multi-tenant natif','en_t'=>'Native multi-tenant',
-                  'fr_d'=>'Isolez chaque client dans son propre espace. Gestion des rôles et quotas par tenant via FilamentPHP.',
-                  'en_d'=>'Isolate each client in their own workspace. Role and quota management per tenant via FilamentPHP.'],
+                  'fr_d'=>'Isolez chaque client dans son propre espace. Gestion des rôles et quotas par tenant.',
+                  'en_d'=>'Isolate each client in their own workspace. Role and quota management per tenant.'],
             ];
             @endphp
             @foreach($miniFeatures as $f)
@@ -811,7 +811,7 @@
                         <div class="text-ink-500 text-xs mb-4">{{-- cURL · request --}}</div>
 
                         <div><span class="text-kazi-400">curl</span> <span class="text-green-400">-X POST</span> <span class="text-amber-300">\</span></div>
-                        <div class="pl-4"><span class="text-amber-300">"https://api.kazitrust.io/v1/trust/analyze"</span> <span class="text-amber-300">\</span></div>
+                        <div class="pl-4"><span class="text-amber-300">"https://kazitrust.digitalconceptcenter.com/v1/trust/analyze"</span> <span class="text-amber-300">\</span></div>
                         <div class="pl-4"><span class="text-kazi-400">-H</span> <span class="text-green-400">"Authorization: Bearer sk-kazi-••••••••"</span> <span class="text-amber-300">\</span></div>
                         <div class="pl-4"><span class="text-kazi-400">-H</span> <span class="text-green-400">"Content-Type: application/json"</span> <span class="text-amber-300">\</span></div>
                         <div class="pl-4"><span class="text-kazi-400">-d</span> <span class="text-amber-300">'</span><span class="text-blue-300">{</span></div>

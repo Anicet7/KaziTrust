@@ -178,11 +178,6 @@ return [
             Toutes les clés KaziTrust sont préfixées `kz_` suivi de 32 caractères alphanumériques.
             Chaque clé est liée à un tenant isolé (votre entreprise) et ne donne accès qu'à vos données.
 
-            **Environnements disponibles :**
-            | Environnement | Préfixe de clé | Base URL |
-            |---|---|---|
-            | Sandbox | `kz_test_` | `https://sandbox.kazitrust.io` |
-            | Production | `kz_live_` | `https://api.kazitrust.io` |
             AUTH,
     ],
 

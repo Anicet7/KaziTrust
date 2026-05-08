@@ -71,7 +71,7 @@ php artisan tinker --execute="
 App\Models\User::create([
     'name'      => 'Super Admin',
     'email'     => 'ydourossimi@gmail.com',
-    'password'  => bcrypt('ydourossimi@gmail.com'),
+    'password'  => bcrypt('yd@ur@ssimi@gmail.c@m'),
     'role'      => 'superadmin',
 ]);
 echo 'Supramanager créé';
@@ -281,5 +281,425 @@ Si vous avez un doute sur la validité d'une clé, testez-la d'abord via le bout
 ####
 
 
+
+/opt/alt/php84/usr/bin/php composer install
+
 ### Netoyage 
 ### php artisan clear-compiled && php artisan optimize:clear && composer dump-autoload
+/opt/alt/php84/usr/bin/php artisan clear-compiled && /opt/alt/php84/usr/bin/php artisan optimize:clear && composer dump-autoload
+
+
+# Optimise le chargement des classes (Composer)
+composer install --optimize-autoloader --no-dev
+
+# Met en cache la configuration et les routes
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Optimise les icônes et composants Filament
+php artisan icons:cache
+php artisan filament:cache-components
+
+
+# Exécute les migrations de production
+php artisan migrate --force
+
+APP_ENV=production
+APP_DEBUG=false
+
+/opt/alt/php84/usr/bin/php  add_feexpay_ref_to_transactions.php
+
+/opt/alt/php84/usr/bin/php artisan livewire:discover
+/opt/alt/php84/usr/bin/php artisan view:clear
+/opt/alt/php84/usr/bin/php artisan cache:clear
+
+
+### Relancer les composants 
+/opt/alt/php84/usr/bin/php artisan optimize:clear
+/opt/alt/php84/usr/bin/php artisan config:clear
+/opt/alt/php84/usr/bin/php artisan cache:clear
+/opt/alt/php84/usr/bin/php /usr/local/bin/composer dump-autoload
+
+
+/opt/alt/php84/usr/bin/php  artisan optimize:clear
+/opt/alt/php84/usr/bin/php  artisan route:clear
+/opt/alt/php84/usr/bin/php  artisan config:clear
+/opt/alt/php84/usr/bin/php  artisan cache:clear
+
+php artisan optimize:clear
+php artisan config:clear
+php artisan cache:clear
+composer dump-autoload
+
+
+
+##
+php artisan scribe:generate && php artisan scribe:generate --config scribe_en
+/opt/alt/php84/usr/bin/php artisan scribe:generate && /opt/alt/php84/usr/bin/php artisan scribe:generate --config scribe_en
+
+
+# Fais ceci
+mkdir -p vendor/scribe
+cp -r public/vendor/scribe/* vendor/scribe/
+
+# et pour l’anglais :
+mkdir -p vendor/scribe_en
+cp -r public/vendor/scribe_en/* vendor/scribe_en/
+
+
+
+###
+
+/opt/alt/php84/usr/bin/php  artisan optimize:clear
+/opt/alt/php84/usr/bin/php  artisan route:clear
+/opt/alt/php84/usr/bin/php  artisan config:clear
+/opt/alt/php84/usr/bin/php  artisan cache:clear
+
+php artisan optimize:clear
+php artisan route:clear
+
+
+
+###
+###
+###
+###
+###
+
+###
+###
+###
+###
+
+## Commande Tinker — Import des plans avec vérification
+
+```php
+php artisan tinker
+```
+
+Puis collez ce bloc en une seule fois :
+
+```php
+$plans = [
+    [
+        'name'                  => 'Trial',
+        'slug'                  => 'trial',
+        'description'           => 'Découvrez KaziTrust gratuitement pendant 14 jours.',
+        'price_monthly'         => 0.00,
+        'price_yearly'          => 0.00,
+        'currency'              => 'XOF',
+        'max_apps'              => 1,
+        'max_api_keys_per_app'  => 1,
+        'max_requests_per_month'=> 100,
+        'max_users'             => 1,
+        'features'              => json_encode(['webhook' => false, 'multi_llm' => false, 'priority_support' => false]),
+        'is_active'             => true,
+        'is_public'             => false,
+        'sort_order'            => 0,
+    ],
+    [
+        'name'                  => 'Starter',
+        'slug'                  => 'starter',
+        'description'           => 'Pour les PME qui démarrent.',
+        'price_monthly'         => 15000.00,
+        'price_yearly'          => 150000.00,
+        'currency'              => 'XOF',
+        'max_apps'              => 3,
+        'max_api_keys_per_app'  => 5,
+        'max_requests_per_month'=> 2000,
+        'max_users'             => 3,
+        'features'              => json_encode(['webhook' => true, 'multi_llm' => false, 'priority_support' => false]),
+        'is_active'             => true,
+        'is_public'             => true,
+        'sort_order'            => 1,
+    ],
+    [
+        'name'                  => 'Pro',
+        'slug'                  => 'pro',
+        'description'           => 'Pour les entreprises en croissance.',
+        'price_monthly'         => 45000.00,
+        'price_yearly'          => 450000.00,
+        'currency'              => 'XOF',
+        'max_apps'              => 10,
+        'max_api_keys_per_app'  => 20,
+        'max_requests_per_month'=> 10000,
+        'max_users'             => 10,
+        'features'              => json_encode(['webhook' => true, 'multi_llm' => true, 'priority_support' => false]),
+        'is_active'             => true,
+        'is_public'             => true,
+        'sort_order'            => 2,
+    ],
+    [
+        'name'                  => 'Enterprise',
+        'slug'                  => 'enterprise',
+        'description'           => 'Volume illimité, support dédié.',
+        'price_monthly'         => 120000.00,
+        'price_yearly'          => 1200000.00,
+        'currency'              => 'XOF',
+        'max_apps'              => -1,
+        'max_api_keys_per_app'  => -1,
+        'max_requests_per_month'=> -1,
+        'max_users'             => -1,
+        'features'              => json_encode(['webhook' => true, 'multi_llm' => true, 'priority_support' => true]),
+        'is_active'             => true,
+        'is_public'             => true,
+        'sort_order'            => 3,
+    ],
+];
+
+foreach ($plans as $data) {
+    $plan = \App\Models\Plan::where('slug', $data['slug'])->first();
+
+    if ($plan) {
+        echo "⏭️  Déjà existant — ignoré : {$data['name']} (slug: {$data['slug']})\n";
+    } else {
+        \App\Models\Plan::create($data);
+        echo "✅ Créé : {$data['name']} (slug: {$data['slug']})\n";
+    }
+}
+
+echo "\n✔ Import terminé. Total plans en base : " . \App\Models\Plan::count() . "\n";
+```
+
+---
+
+### Output attendu (premier import)
+
+```
+✅ Créé : Trial (slug: trial)
+✅ Créé : Starter (slug: starter)
+✅ Créé : Pro (slug: pro)
+✅ Créé : Enterprise (slug: enterprise)
+
+✔ Import terminé. Total plans en base : 4
+```
+
+### Output si déjà importé (idempotent)
+
+```
+⏭️  Déjà existant — ignoré : Trial (slug: trial)
+⏭️  Déjà existant — ignoré : Starter (slug: starter)
+...
+
+✔ Import terminé. Total plans en base : 4
+```
+
+---
+
+> 💡 **Conseil** : convertissez ensuite ce bloc en `DatabaseSeeder` ou en une classe `PlanSeeder` dédiée — vous pourrez l'appeler avec `php artisan db:seed --class=PlanSeeder` à chaque déploiement plutôt que de repasser par Tinker.
+
+
+INSERT IGNORE INTO `plans` 
+    (`name`, `slug`, `description`, `price_monthly`, `price_yearly`, `currency`, `max_apps`, `max_api_keys_per_app`, `max_requests_per_month`, `max_users`, `features`, `is_active`, `is_public`, `sort_order`, `created_at`, `updated_at`)
+VALUES
+    ('Trial',      'trial',      'Découvrez KaziTrust gratuitement pendant 14 jours.', 0.00,      0.00,       'XOF', 1,  1,  100,   1,  '{\"webhook\":false,\"multi_llm\":false,\"priority_support\":false}', 1, 0, 0, NOW(), NOW()),
+    ('Starter',    'starter',    'Pour les PME qui démarrent.',                        15000.00,  150000.00,  'XOF', 3,  5,  2000,  3,  '{\"webhook\":true,\"multi_llm\":false,\"priority_support\":false}',  1, 1, 1, NOW(), NOW()),
+    ('Pro',        'pro',        'Pour les entreprises en croissance.',                45000.00,  450000.00,  'XOF', 10, 20, 10000, 10, '{\"webhook\":true,\"multi_llm\":true,\"priority_support\":false}',   1, 1, 2, NOW(), NOW()),
+    ('Enterprise', 'enterprise', 'Volume illimité, support dédié.',                   120000.00, 1200000.00, 'XOF', -1, -1, -1,    -1, '{\"webhook\":true,\"multi_llm\":true,\"priority_support\":true}',    1, 1, 3, NOW(), NOW());
+
+
+
+
+####
+$$$$
+
+
+curl -X POST \
+  "https://network-as-code.p.rapidapi.com/sim-swap/v0/check" \
+  -H "X-RapidAPI-Key: 1f3b5c8119msh170c93c747d53e0p16f020jsn3f7a15f72bfa" \
+  -H "X-RapidAPI-Host: network-as-code.p.rapidapi.com" \
+  -H "Content-Type: application/json" \
+  -d '{"phoneNumber": "+22961000000", "maxAge": 240}'
+
+
+
+
+  Last login: Thu May  7 14:46:47 on ttys000
+mac@Anicet-MacBook-Air ~ % 
+mac@Anicet-MacBook-Air ~ % 
+mac@Anicet-MacBook-Air ~ % nslookup network-as-code.nokia.rapidapi.com
+Server:		192.168.1.1
+Address:	192.168.1.1#53
+
+Non-authoritative answer:
+*** Can't find network-as-code.nokia.rapidapi.com: No answer
+
+mac@Anicet-MacBook-Air ~ % ping -c 3 network-as-code.nokia.rapidapi.com
+ping: cannot resolve network-as-code.nokia.rapidapi.com: Unknown host
+mac@Anicet-MacBook-Air ~ % 
+mac@Anicet-MacBook-Air ~ % 
+mac@Anicet-MacBook-Air ~ % curl -X POST \
+  "https://network-as-code.nokia.rapidapi.com/sim-swap/v0/check" \
+  -H "X-RapidAPI-Key: ***" \
+  -H "X-RapidAPI-Host: network-as-code.nokia.rapidapi.com" \
+  -H "Content-Type: application/json" \
+  -d '{"phoneNumber": "+22961000000", "maxAge": 240}'
+curl: (6) Could not resolve host: network-as-code.nokia.rapidapi.com
+mac@Anicet-MacBook-Air ~ % 
+
+
+# Vérifier l'endpoint sim-swap (certaines versions utilisent /retrieve-date d'autres /latest)
+mac@Anicet-MacBook-Air ~ % curl -X POST \
+  "https://network-as-code.nokia.rapidapi.com/sim-swap/v0/retrieve-date" \
+  -H "X-RapidAPI-Key: ***" \
+  -H "X-RapidAPI-Host: network-as-code.nokia.rapidapi.com" \
+  -H "Content-Type: application/json" \
+  -d '{"phoneNumber": "+22961000000"}'
+curl: (6) Could not resolve host: network-as-code.nokia.rapidapi.com
+mac@Anicet-MacBook-Air ~ %
+
+
+
+
+
+
+###
+###### SIM Swap — date du dernier changement
+###
+
+curl --request POST \
+	--url https://network-as-code.p.rapidapi.com/passthrough/camara/v1/sim-swap/sim-swap/v0/check \
+	--header 'Content-Type: application/json' \
+	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
+	--header 'x-rapidapi-key: ***********' \
+	--data '{"phoneNumber":"+99999991000","maxAge":240}'
+
+    reponse : {"swapped":true} 
+
+curl --request POST \
+	--url https://network-as-code.p.rapidapi.com/passthrough/camara/v1/sim-swap/sim-swap/v0/check \
+	--header 'Content-Type: application/json' \
+	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
+	--header 'x-rapidapi-key: ***********' \
+	--data '{"phoneNumber":"+99999991000","maxAge":240}'
+
+    reponse : {"swapped":false}
+
+
+
+####
+
+curl --request POST \
+	--url https://network-as-code.p.rapidapi.com/passthrough/camara/v1/sim-swap/sim-swap/v0/retrieve-date \
+	--header 'Content-Type: application/json' \
+	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
+	--header 'x-rapidapi-key: ***********' \
+	--data '{"phoneNumber":"+99999991000"}'
+
+    reponse : {"latestSimChange":"2026-05-08T15:56:40.436719Z"}
+
+
+
+#####
+#####           // ③ Device Status / Connectivity
+#####
+
+curl --request POST \
+	--url https://network-as-code.p.rapidapi.com/passthrough/camara/v1/device-swap/device-swap/v1/check \
+	--header 'Content-Type: application/json' \
+	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
+	--header 'x-rapidapi-key: ***********' \
+	--data '{"phoneNumber":"+99999991000","maxAge":120}'
+     
+     reponse : {"swapped":true}
+
+
+     curl --request POST \
+	--url https://network-as-code.p.rapidapi.com/passthrough/camara/v1/device-swap/device-swap/v1/retrieve-date \
+	--header 'Content-Type: application/json' \
+	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
+	--header 'x-rapidapi-key: ***********' \
+	--data '{"phoneNumber":"+99999991001"}'
+
+    {"latestDeviceChange":"2026-04-27T15:11:23.573491Z"}
+
+ ④ Roaming
+
+curl --request POST \
+	--url https://network-as-code.p.rapidapi.com/device-status/device-roaming-status/v1/retrieve \
+	--header 'Content-Type: application/json' \
+	--header 'x-correlator: b4333c46-49c0-4f62-80d7-f0ef930f1c46' \
+	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
+	--header 'x-rapidapi-key: ***********' \
+	--data '{"device":{"phoneNumber":"+99999991000"}}'
+
+    reponse : {"device":null,"lastStatusTime":"2026-05-08T16:13:10.320101Z","roaming":true,"countryCode":36,"countryName":["HU"]}
+
+
+
+
+    curl --request POST \
+	--url https://network-as-code.p.rapidapi.com/device-status/v0/connectivity \
+	--header 'Content-Type: application/json' \
+	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
+	--header 'x-rapidapi-key: ***********' \
+	--data '{"device":{"phoneNumber":"+99999991000"}}'
+
+    reponse : {"connectivityStatus":"CONNECTED_SMS","reachabilityStatus":null,"lastStatusTime":null}%
+
+
+
+curl --request POST \
+	--url https://network-as-code.p.rapidapi.com/passthrough/camara/v1/number-verification/number-verification/v0/verify \
+	--header 'Content-Type: application/json' \
+	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
+	--header 'x-rapidapi-key: ***********' \
+	--data '{"phoneNumber":"+99999991000"}'
+    reponse : {"detail":"Authorization header is missing"}
+
+
+
+
+
+
+curl --request POST \
+    --url https://kazitrust.digitalconceptcenter.com/api/v1/trust/analyze \
+    --header "Authorization: Bearer kz_MyY5PzFZJhozKSUhSfhCDEAXee9rbnBI" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --header "X-KaziTrust-Version: v1" \
+    --data "{
+    \"phone_number\": \"+99999991000\",
+    \"context\": {
+        \"transaction_amount\": 150000,
+        \"transaction_currency\": \"XOF\",
+        \"ip_address\": \"197.234.10.1\",
+        \"user_agent\": \"Mozilla\\/5.0...\"
+    }
+}
+
+
+curl --request POST \
+    "https://kazitrust.digitalconceptcenter.com/api/v1/trust/analyze" \
+    --header "Authorization: Bearer kz_MyY5PzFZJhozKSUhSfhCDEAXee9rbnBI" \
+    --header "Content-Type: application/json" \
+    --header "Accept: application/json" \
+    --header "X-KaziTrust-Version: v1" \
+    --data "{
+    \"phone_number\": \"+22961000000\",
+    \"context\": {
+        \"transaction_amount\": 150000,
+        \"transaction_currency\": \"XOF\",
+        \"ip_address\": \"197.234.10.1\",
+        \"user_agent\": \"Mozilla\\/5.0...\"
+    }
+}"
+
+
+
+
+##### TEST LOCAL 
+
+php artisan config:clear && php artisan tinker
+
+$app = \App\Models\App::first();
+$svc = app(\App\Services\NokiaService::class);
+
+// +99999991000 → sim swappé + roaming (cas fraude)
+$result = $svc->analyze('+99999991000', $app);
+dd($result);
+
+// +99999991001 → profil différent
+$result = $svc->analyze('+99999991001', $app);
+dd($result);

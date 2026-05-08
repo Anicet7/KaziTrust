@@ -12,6 +12,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class TrustLog extends Model
 {
+
+ // ✅ FIX : tous les champs écrits par TrustController::analyze()
+    protected $fillable = [
+        'app_id',
+        'phone_number',
+        'nokia_payload',
+        'ai_provider',
+        'ai_response',
+        'token_count',
+        'latency_ms',
+        'cost_estimate',
+    ];
+    
     protected $casts = [
         'nokia_payload' => 'array',
         'ai_response' => 'array',

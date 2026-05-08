@@ -9,8 +9,8 @@ use App\Services\NokiaService;
 use App\Services\WebhookService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-
 use Illuminate\Support\Facades\DB;
+
 /**
  * @group Analyse de confiance
  *
@@ -85,8 +85,8 @@ class TrustController extends Controller
             'phone_number.regex' => 'Le numéro doit être au format E.164 (ex: +22961000000).',
         ]);
 
-        $app    = $request->get('_kazi_app');
-        $tenant = $request->get('_kazi_tenant');
+        $app       = $request->get('_kazi_app');
+        $tenant    = $request->get('_kazi_tenant');
         $startTime = microtime(true);
         $requestId = (string) Str::uuid();
 
@@ -104,41 +104,55 @@ class TrustController extends Controller
             app: $app,
         );
 
-        // ④ Calcul métriques
+        // ④ Extraction sécurisée de la réponse IA
+        //    — même si le fallback a fonctionné, on défensive-code ici aussi
+        $aiResponse = $aiResult['response'] ?? [];
+
+        $decision    = $aiResponse['decision']       ?? 'manual_review';
+        $score       = $aiResponse['score']          ?? 50;
+        $reasoning   = $aiResponse['reasoning']      ?? 'Analyse automatique indisponible. Vérification manuelle requise.';
+        $riskFactors = $aiResponse['risk_factors']   ?? [];
+        $recommendation = $aiResponse['recommendation'] ?? '';
+
+        // ⑤ Calcul métriques
         $latencyMs    = (int) round((microtime(true) - $startTime) * 1000);
         $tokenCount   = $aiResult['token_count'] ?? 0;
         $costEstimate = $this->ai->estimateCost($tokenCount, $app->llm_provider);
 
-        // ⑤ Enregistrement du log
+        // ⑥ Enregistrement du log
         $log = TrustLog::create([
             'app_id'        => $app->id,
             'phone_number'  => $validated['phone_number'],
             'nokia_payload' => $nokiaPayload,
             'ai_provider'   => $app->llm_provider,
-            'ai_response'   => $aiResult['response'],
+            'ai_response'   => $aiResponse,
             'token_count'   => $tokenCount,
             'latency_ms'    => $latencyMs,
             'cost_estimate' => $costEstimate,
         ]);
 
-        // ⑥ Webhook (fire & forget — ne bloque pas la réponse)
+        // ⑦ Webhook (fire & forget — ne bloque pas la réponse)
         if ($app->webhook_url) {
             $this->webhook->dispatch($app, $log, $requestId);
         }
 
-        // ⑦ Réponse JSON
+        // ⑧ Réponse JSON — toutes les clés sont garanties non-null
         return response()->json([
             'request_id'    => $requestId,
             'phone_number'  => $validated['phone_number'],
-            'decision'      => $aiResult['response']['decision'],
-            'score'         => $aiResult['response']['score'],
-            'reasoning'     => $aiResult['response']['reasoning'],
+            'decision'      => $decision,
+            'score'         => $score,
+            'reasoning'     => $reasoning,
+            'risk_factors'  => $riskFactors,
+            'recommendation'=> $recommendation,
             'nokia_signals' => [
-                'sim_swap_detected'  => $nokiaPayload['sim_swap']['swapped'] ?? false,
-                'sim_change_days_ago'=> $nokiaPayload['sim_swap']['days_ago'] ?? null,
-                'is_roaming'         => $nokiaPayload['roaming']['is_roaming'] ?? false,
-                'network_status'     => $nokiaPayload['network_status']['status'] ?? 'unknown',
-                'location_country'   => $nokiaPayload['device_location']['country_code'] ?? null,
+                'sim_swap_detected'   => $nokiaPayload['sim_swap']['swapped']         ?? false,
+                'sim_change_days_ago' => $nokiaPayload['sim_swap']['days_ago']         ?? null,
+                'verified_swap_240h'  => $nokiaPayload['sim_swap']['verified_swap_240h'] ?? false,
+                'is_roaming'          => $nokiaPayload['roaming']['is_roaming']        ?? false,
+                'roaming_country'     => $nokiaPayload['roaming']['country_name'][0]   ?? null,
+                'network_status'      => $nokiaPayload['network_status']['status']     ?? 'unknown',
+                'location_country'    => $nokiaPayload['device_location']['country_code'] ?? null,
             ],
             'latency_ms'    => $latencyMs,
             'token_count'   => $tokenCount,
@@ -166,13 +180,9 @@ class TrustController extends Controller
     {
         $app = $request->get('_kazi_app');
 
-       // $query = TrustLog::where('app_id', $app->id)
-       //     ->orderByDesc('created_at');
-
         $query = TrustLog::query()
             ->where('app_id', '=', $app->id)
             ->orderByDesc('created_at');
-
 
         if ($request->decision) {
             $query->whereJsonContains('ai_response->decision', $request->decision);
@@ -189,13 +199,13 @@ class TrustController extends Controller
 
         return response()->json([
             'data' => $logs->map(fn($log) => [
-                'id'          => $log->id,
-                'phone_number'=> $log->phone_number,
-                'decision'    => $log->ai_response['decision'] ?? null,
-                'score'       => $log->ai_response['score'] ?? null,
-                'latency_ms'  => $log->latency_ms,
-                'cost_estimate'=> $log->cost_estimate,
-                'analyzed_at' => $log->created_at->toIso8601String(),
+                'id'            => $log->id,
+                'phone_number'  => $log->phone_number,
+                'decision'      => $log->ai_response['decision']    ?? 'manual_review',
+                'score'         => $log->ai_response['score']        ?? 50,
+                'latency_ms'    => $log->latency_ms,
+                'cost_estimate' => $log->cost_estimate,
+                'analyzed_at'   => $log->created_at->toIso8601String(),
             ]),
             'meta' => [
                 'total'        => $logs->total(),
@@ -213,15 +223,12 @@ class TrustController extends Controller
      */
     public function show(Request $request, string $requestId)
     {
-        // Note: on utilise l'id du log comme référence ici
         $app = $request->get('_kazi_app');
 
-
-       // $log = TrustLog::where('app_id', $app->id)->findOrFail($requestId);
         $log = TrustLog::query()
-                ->where('app_id', '=', $app->id)
-                ->where('id', '=', $requestId)
-                ->firstOrFail();
+            ->where('app_id', '=', $app->id)
+            ->where('id', '=', $requestId)
+            ->firstOrFail();
 
         return response()->json($log);
     }
