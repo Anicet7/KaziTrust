@@ -104,22 +104,41 @@ class TrustController extends Controller
             app: $app,
         );
 
-        // ④ Extraction sécurisée de la réponse IA
+        // ④ Détecter immédiatement un quota dépassé et répondre au client
+        //    avant même d'enregistrer le log (pas de token consommé)
+        if (($aiResult['_error_code'] ?? null) === 'ai_quota_exceeded') {
+            return response()->json([
+                'error'      => 'ai_quota_exceeded',
+                'message'    => 'Le quota de votre clé API ' . strtoupper($app->llm_provider) . ' est dépassé. '
+                              . 'Vérifiez la facturation de votre fournisseur IA et mettez à jour votre clé dans les paramètres de l\'application.',
+                'provider'   => $app->llm_provider,
+                'request_id' => $requestId,
+                'help' => match ($app->llm_provider) {
+                    'openai' => 'https://platform.openai.com/billing',
+                    'gemini' => 'https://aistudio.google.com/app/apikey',
+                    'claude' => 'https://console.anthropic.com/settings/billing',
+                    default  => null,
+                },
+            ], 402); // 402 Payment Required — sémantiquement correct pour quota/billing
+        }
+
+        // ⑤ Extraction sécurisée de la réponse IA
         //    — même si le fallback a fonctionné, on défensive-code ici aussi
         $aiResponse = $aiResult['response'] ?? [];
+        $isFallback = $aiResult['_fallback'] ?? false;
 
-        $decision    = $aiResponse['decision']       ?? 'manual_review';
-        $score       = $aiResponse['score']          ?? 50;
-        $reasoning   = $aiResponse['reasoning']      ?? 'Analyse automatique indisponible. Vérification manuelle requise.';
-        $riskFactors = $aiResponse['risk_factors']   ?? [];
+        $decision       = $aiResponse['decision']       ?? 'manual_review';
+        $score          = $aiResponse['score']          ?? 50;
+        $reasoning      = $aiResponse['reasoning']      ?? 'Analyse automatique indisponible. Vérification manuelle requise.';
+        $riskFactors    = $aiResponse['risk_factors']   ?? [];
         $recommendation = $aiResponse['recommendation'] ?? '';
 
-        // ⑤ Calcul métriques
+        // ⑥ Calcul métriques
         $latencyMs    = (int) round((microtime(true) - $startTime) * 1000);
         $tokenCount   = $aiResult['token_count'] ?? 0;
         $costEstimate = $this->ai->estimateCost($tokenCount, $app->llm_provider);
 
-        // ⑥ Enregistrement du log
+        // ⑦ Enregistrement du log
         $log = TrustLog::create([
             'app_id'        => $app->id,
             'phone_number'  => $validated['phone_number'],
@@ -131,13 +150,13 @@ class TrustController extends Controller
             'cost_estimate' => $costEstimate,
         ]);
 
-        // ⑦ Webhook (fire & forget — ne bloque pas la réponse)
+        // ⑧ Webhook (fire & forget — ne bloque pas la réponse)
         if ($app->webhook_url) {
             $this->webhook->dispatch($app, $log, $requestId);
         }
 
-        // ⑧ Réponse JSON — toutes les clés sont garanties non-null
-        return response()->json([
+        // ⑨ Réponse JSON — toutes les clés sont garanties non-null
+        return response()->json(array_filter([
             'request_id'    => $requestId,
             'phone_number'  => $validated['phone_number'],
             'decision'      => $decision,
@@ -145,20 +164,25 @@ class TrustController extends Controller
             'reasoning'     => $reasoning,
             'risk_factors'  => $riskFactors,
             'recommendation'=> $recommendation,
+            // Signaler au client que l'IA a utilisé le fallback (analyse dégradée)
+            'ai_degraded'   => $isFallback ?: null,
+            'ai_error'      => $isFallback
+                ? ($aiResult['_error_code'] ?? 'ai_unavailable')
+                : null,
             'nokia_signals' => [
-                'sim_swap_detected'   => $nokiaPayload['sim_swap']['swapped']         ?? false,
-                'sim_change_days_ago' => $nokiaPayload['sim_swap']['days_ago']         ?? null,
-                'verified_swap_240h'  => $nokiaPayload['sim_swap']['verified_swap_240h'] ?? false,
-                'is_roaming'          => $nokiaPayload['roaming']['is_roaming']        ?? false,
-                'roaming_country'     => $nokiaPayload['roaming']['country_name'][0]   ?? null,
-                'network_status'      => $nokiaPayload['network_status']['status']     ?? 'unknown',
+                'sim_swap_detected'   => $nokiaPayload['sim_swap']['swapped']            ?? false,
+                'sim_change_days_ago' => $nokiaPayload['sim_swap']['days_ago']            ?? null,
+                'verified_swap_240h'  => $nokiaPayload['sim_swap']['verified_swap_240h']  ?? false,
+                'is_roaming'          => $nokiaPayload['roaming']['is_roaming']           ?? false,
+                'roaming_country'     => $nokiaPayload['roaming']['country_name'][0]      ?? null,
+                'network_status'      => $nokiaPayload['network_status']['status']        ?? 'unknown',
                 'location_country'    => $nokiaPayload['device_location']['country_code'] ?? null,
             ],
             'latency_ms'    => $latencyMs,
             'token_count'   => $tokenCount,
             'cost_estimate' => $costEstimate,
             'analyzed_at'   => now()->toIso8601String(),
-        ]);
+        ], fn($v) => $v !== null));
     }
 
     /**

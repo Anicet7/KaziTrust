@@ -562,8 +562,8 @@ curl --request POST \
 	--url https://network-as-code.p.rapidapi.com/passthrough/camara/v1/sim-swap/sim-swap/v0/check \
 	--header 'Content-Type: application/json' \
 	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
-	--header 'x-rapidapi-key: ***********' \
-	--data '{"phoneNumber":"+99999991000","maxAge":240}'
+	--header 'x-rapidapi-key: 1f3b5c8119msh170c93c747d53e0p16f020jsn3f7a15f72bfa' \
+	--data '{"phoneNumber":"+99999901000","maxAge":240}'
 
     reponse : {"swapped":true} 
 
@@ -571,7 +571,7 @@ curl --request POST \
 	--url https://network-as-code.p.rapidapi.com/passthrough/camara/v1/sim-swap/sim-swap/v0/check \
 	--header 'Content-Type: application/json' \
 	--header 'x-rapidapi-host: network-as-code.p.rapidapi.com' \
-	--header 'x-rapidapi-key: ***********' \
+	--header 'x-rapidapi-key: 1f3b5c8119msh170c93c747d53e0p16f020jsn3f7a15f72bfa' \
 	--data '{"phoneNumber":"+99999991000","maxAge":240}'
 
     reponse : {"swapped":false}
@@ -703,3 +703,37 @@ dd($result);
 // +99999991001 → profil différent
 $result = $svc->analyze('+99999991001', $app);
 dd($result);
+
+
+
+#####
+#####
+#####
+#####
+#####
+#####
+#####
+#####
+#####
+#####
+#####
+
+La doc officielle Nokia NaC ne publie pas la table complète de tous les numéros sandboxés dans des résultats indexés. Voici ce que j'ai trouvé de certain, enrichi par tout ce que révèlent tes logs et ton test file. Je compile ça dans une référence complète.---
+
+Voici le résumé pratique de ce que j'ai trouvé dans la doc officielle + tes logs + tes tests :
+
+**Préfixe simulateur Nokia :** tout numéro commençant par `+9999990` (SIM Swap CAMARA) ou `+9999999` (Device Swap NaC) est automatiquement routé vers le sandbox Nokia, sans toucher un vrai réseau.
+
+**Ce que confirme la doc officielle Nokia NaC :**
+- `+99999991000` → Device Swap **détecté** (doc Device Swap)
+- `+99999991001` → Device Swap **non détecté** (doc Device Swap)
+
+**Ce que révèlent tes logs et tests (SIM Swap CAMARA API) :**
+- `+99999901000` → SIM swap non détecté → **approve** avec bonne config
+- `+99999901001` → SIM swap ~2h → **reject** systématique
+- `+99999901002` → SIM swap ~7j → **reject** systématique
+- `+99999902000`, `+99999903000` → roaming HU (hors CEDEAO) → **manual_review** si montant > 50k XOF
+
+Pour les cas `manual_review` liés à Nokia indisponible, 2G ou nouveau numéro, tu construis le payload toi-même — le numéro n'a pas d'importance, c'est le contenu du payload qui pilote la règle.
+
+

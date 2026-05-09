@@ -83,7 +83,7 @@ class NokiaService
 
             $body = $r->json();
             $results['sim_swap'] = [
-                'swapped'     => isset($body['latestSimChange']),
+                /// 'swapped'     => isset($body['latestSimChange']),
                 /*
                 'days_ago'    => isset($body['latestSimChange'])
                     ? now()->diffInDays(\Carbon\Carbon::parse($body['latestSimChange']))
@@ -123,7 +123,12 @@ class NokiaService
                 throw new \RuntimeException("HTTP {$r->status()}: {$r->body()}");
             }
 
-            $results['sim_swap']['verified_swap_240h'] = $r->json('swapped', false);
+            // DÉFINIS LA CLÉ SWAPPED ICI UNIQUEMENT :
+            $isSwapped = $r->json('swapped', false);
+            $results['sim_swap']['swapped']            = $isSwapped;
+            $results['sim_swap']['verified_swap_240h'] = $isSwapped;
+
+          //  $results['sim_swap']['verified_swap_240h'] = $r->json('swapped', false);
 
         } catch (\Exception $e) {
             Log::warning('Nokia SIM Swap check failed', ['error' => $e->getMessage()]);

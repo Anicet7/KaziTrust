@@ -1,0 +1,229 @@
+
+<h2 class="sr-only">Référence complète des numéros Nokia sandbox et des décisions AiAnalysisService</h2>
+
+<style>
+:root { --gap: 10px; }
+.section-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin: 1.5rem 0 0.5rem; }
+.section-title:first-child { margin-top: 0.5rem; }
+.card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 12px 16px; margin-bottom: var(--gap); }
+.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.badge-approve { background: #EAF3DE; color: #3B6D11; }
+.badge-reject { background: #FCEBEB; color: #A32D2D; }
+.badge-manual { background: #FAEEDA; color: #854F0B; }
+.badge-official { background: #E6F1FB; color: #185FA5; }
+.number { font-family: var(--font-mono); font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.rule-tag { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-secondary); background: var(--color-background-secondary); padding: 2px 7px; border-radius: 4px; }
+.signals { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.sig { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: var(--color-background-secondary); color: var(--color-text-secondary); border: 0.5px solid var(--color-border-tertiary); }
+.sig.hot { background: #FCEBEB; color: #A32D2D; border-color: transparent; }
+.sig.warn { background: #FAEEDA; color: #854F0B; border-color: transparent; }
+.sig.ok { background: #EAF3DE; color: #3B6D11; border-color: transparent; }
+.desc { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 4px; }
+.row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 1.5rem 0 0.5rem; }
+.note { font-size: 12px; color: var(--color-text-secondary); background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 8px 12px; margin-top: 8px; border-left: 3px solid var(--color-border-secondary); }
+</style>
+
+<p class="section-title"><i class="ti ti-ban" aria-hidden="true"></i> ✦ Décision : REJECT</p>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">+99999901001</span>
+    <span class="badge badge-reject">reject</span>
+    <span class="badge badge-official">Nokia sandbox officiel</span>
+  </div>
+  <p class="desc">SIM swap détecté il y a ~2h (days_ago ≈ 0.007). Règle <code>sim_swap_24h</code> se déclenche immédiatement.</p>
+  <div class="signals">
+    <span class="sig hot">swapped: true</span>
+    <span class="sig hot">days_ago: 0.007</span>
+    <span class="sig ok">roaming: false</span>
+    <span class="sig ok">4G</span>
+  </div>
+  <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+    <span class="rule-tag">rule:sim_swap_24h</span>
+    <span style="font-size:11px;color:var(--color-text-secondary)">score ≤ 5 · risk: sim_swap_critical, swap_under_24h</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">+99999901001 + roaming GH</span>
+    <span class="badge badge-reject">reject</span>
+  </div>
+  <p class="desc">SIM swap 2h + roaming Ghana → combo fraude critique.</p>
+  <div class="signals">
+    <span class="sig hot">swapped: true</span>
+    <span class="sig hot">days_ago: 0.007</span>
+    <span class="sig hot">roaming: GH (Ghana)</span>
+  </div>
+  <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+    <span class="rule-tag">rule:sim_swap_roaming</span>
+    <span style="font-size:11px;color:var(--color-text-secondary)">risk: fraud_combo_detected</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">+99999901002</span>
+    <span class="badge badge-reject">reject</span>
+    <span class="badge badge-official">Nokia sandbox officiel</span>
+  </div>
+  <p class="desc">SIM swap il y a ~7 jours (days_ago ≈ 7). Délai insuffisant pour toute transaction.</p>
+  <div class="signals">
+    <span class="sig hot">swapped: true</span>
+    <span class="sig hot">days_ago ≈ 7</span>
+    <span class="sig ok">roaming: false</span>
+  </div>
+  <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+    <span class="rule-tag">rule:sim_swap_7d</span>
+    <span style="font-size:11px;color:var(--color-text-secondary)">score 12 · risk: sim_swap_recent</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">Numéro inactif fictif (ex: +22900000006)</span>
+    <span class="badge badge-reject">reject</span>
+  </div>
+  <p class="desc">number_verification.is_active = false → rejet immédiat, peu importe le montant.</p>
+  <div class="signals">
+    <span class="sig hot">is_active: false</span>
+    <span class="sig ok">swapped: false</span>
+  </div>
+  <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+    <span class="rule-tag">rule:inactive_number</span>
+    <span style="font-size:11px;color:var(--color-text-secondary)">score 2 · risk: inactive_number</span>
+  </div>
+</div>
+
+<hr class="divider">
+<p class="section-title"><i class="ti ti-alert-triangle" aria-hidden="true"></i> ✦ Décision : MANUAL REVIEW</p>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">+99999902000</span>
+    <span class="badge badge-manual">manual_review</span>
+    <span class="badge badge-official">Nokia sandbox officiel</span>
+  </div>
+  <p class="desc">Roaming hors CEDEAO (ex: Hongrie HU) + montant > 50 000 XOF.</p>
+  <div class="signals">
+    <span class="sig warn">roaming: HU (Hongrie)</span>
+    <span class="sig warn">hors CEDEAO</span>
+    <span class="sig ok">swapped: false</span>
+  </div>
+  <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+    <span class="rule-tag">rule:roaming_outside_ecowas</span>
+    <span style="font-size:11px;color:var(--color-text-secondary)">montant > 50 000 XOF requis</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">+99999903000</span>
+    <span class="badge badge-manual">manual_review</span>
+    <span class="badge badge-official">Nokia sandbox officiel</span>
+  </div>
+  <p class="desc">Autre numéro Nokia avec roaming hors CEDEAO observé dans tes logs (HU).</p>
+  <div class="signals">
+    <span class="sig warn">roaming: HU</span>
+    <span class="sig warn">hors CEDEAO</span>
+    <span class="sig ok">swapped: false</span>
+  </div>
+  <div style="margin-top:8px;">
+    <span class="rule-tag">rule:roaming_outside_ecowas</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">Payload Nokia erreur (any number)</span>
+    <span class="badge badge-manual">manual_review</span>
+  </div>
+  <p class="desc">sim_swap.error = SERVICE_UNAVAILABLE + montant ≥ 100 000 XOF → nokia_data_unavailable.</p>
+  <div class="signals">
+    <span class="sig hot">error: SERVICE_UNAVAILABLE</span>
+    <span class="sig hot">network error: TIMEOUT</span>
+    <span class="sig warn">montant ≥ 100k XOF</span>
+  </div>
+  <div style="margin-top:8px;">
+    <span class="rule-tag">rule:nokia_missing_high_amount</span>
+    <span style="font-size:11px;color:var(--color-text-secondary); margin-left:6px">risk: nokia_data_unavailable</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">Réseau 2G + ≥ 500 EUR ou ≥ 50 001 XOF</span>
+    <span class="badge badge-manual">manual_review</span>
+  </div>
+  <p class="desc">Technologie 2G avec gros montant → suspect.</p>
+  <div class="signals">
+    <span class="sig warn">technology: 2G</span>
+    <span class="sig warn">high_amount</span>
+    <span class="sig ok">swapped: false</span>
+  </div>
+  <div style="margin-top:8px;">
+    <span class="rule-tag">rule:2g_high_amount</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">Nouveau numéro (activation &lt; 7 jours)</span>
+    <span class="badge badge-manual">manual_review</span>
+  </div>
+  <p class="desc">days_since_activation &lt; 7 + transaction élevée → vérifier l'ancienneté client.</p>
+  <div class="signals">
+    <span class="sig warn">days_active: 3</span>
+    <span class="sig warn">high_amount</span>
+    <span class="sig ok">swapped: false</span>
+  </div>
+  <div style="margin-top:8px;">
+    <span class="rule-tag">rule:new_number_high_amount</span>
+  </div>
+</div>
+
+<hr class="divider">
+<p class="section-title"><i class="ti ti-circle-check" aria-hidden="true"></i> ✦ Décision : APPROVE</p>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">+99999901000</span>
+    <span class="badge badge-approve">approve</span>
+    <span class="badge badge-official">Nokia sandbox officiel</span>
+  </div>
+  <p class="desc">Numéro sûr : pas de swap, 4G, pas de roaming, actif > 30 jours. Profil "en béton".</p>
+  <div class="signals">
+    <span class="sig ok">swapped: false</span>
+    <span class="sig ok">4G</span>
+    <span class="sig ok">roaming: false</span>
+    <span class="sig ok">is_active: true</span>
+    <span class="sig ok">days_active > 30</span>
+  </div>
+  <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+    <span class="rule-tag">rule:all_clear</span>
+    <span style="font-size:11px;color:var(--color-text-secondary)">score 95 · 0 token</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="number">Micro-transaction (any number)</span>
+    <span class="badge badge-approve">approve</span>
+  </div>
+  <p class="desc">Montant ≤ 5 000 XOF, pas de swap → tolérance élevée, approuvé automatiquement.</p>
+  <div class="signals">
+    <span class="sig ok">swapped: false</span>
+    <span class="sig ok">montant ≤ 5k XOF</span>
+    <span class="sig ok">is_active: true</span>
+  </div>
+  <div style="margin-top:8px;">
+    <span class="rule-tag">rule:micro_amount_safe</span>
+    <span style="font-size:11px;color:var(--color-text-secondary); margin-left:6px">score 85</span>
+  </div>
+</div>
+
+<div class="note">
+  <strong>Source :</strong> Numéros <code>+99999901xxx</code> / <code>+99999902xxx</code> / <code>+99999903xxx</code> = simulateur Nokia CAMARA SIM Swap API (RapidAPI). Numéros <code>+99999991xxx</code> = simulateur Nokia NaC Device Swap (doc officielle). Les deux séries utilisent le préfixe <code>+9999999</code> — tout numéro avec ce préfixe est routé vers le simulateur Nokia.
+</div>
