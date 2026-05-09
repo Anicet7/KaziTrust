@@ -55,6 +55,79 @@ class NokiaService
      |  Endpoints validés le 2026-05-08 avec numéros de test +9999999100x
      | ----------------------------------------------------------------- */
 
+    // Constantes pour le retry et le circuit breaker
+    private const MAX_RETRIES        = 2;
+    private const RETRY_BASE_DELAY   = 1500;   // ms  (1.5s puis 3s)
+    private const CIRCUIT_BREAK_KEY  = 'nokia:cb:429';
+    private const CIRCUIT_BREAK_MAX  = 5;      // 429 cumulés → circuit ouvert
+    private const CIRCUIT_BREAK_TTL  = 30;     // secondes
+
+    /**
+     * Wrapper HTTP avec retry exponentiel sur les 429 (rate limit Nokia BASIC).
+     *
+     * Stratégie :
+     *   - 429 → attendre RETRY_BASE_DELAY * 2^(tentative-1) ms, puis retry
+     *   - Après MAX_RETRIES épuisés → exception 'RATE_LIMITED'
+     *   - Circuit breaker : si ≥ CIRCUIT_BREAK_MAX 429 cumulés dans les
+     *     CIRCUIT_BREAK_TTL secondes → on court-circuite sans appeler Nokia
+     *   - Autres erreurs (5xx, timeout) → exception immédiate, pas de retry
+     */
+    private function callWithRetry(
+        string $endpoint,
+        array  $body,
+        string $label,
+        bool   $withCorrelator = false
+    ): \Illuminate\Http\Client\Response {
+
+        // Circuit breaker : trop de 429 récents → court-circuit
+        $cbCount = \Illuminate\Support\Facades\Cache::get(self::CIRCUIT_BREAK_KEY, 0);
+        if ($cbCount >= self::CIRCUIT_BREAK_MAX) {
+            Log::warning("{$label} skipped — circuit breaker ouvert ({$cbCount} 429 récents)");
+            throw new \RuntimeException('CIRCUIT_BREAKER_OPEN');
+        }
+
+        $attempt = 0;
+
+        while (true) {
+            if ($attempt > 0) {
+                $delayMs = self::RETRY_BASE_DELAY * (2 ** ($attempt - 1));
+                Log::info("{$label} retry #{$attempt} — attente {$delayMs}ms après 429");
+                usleep($delayMs * 1000);
+            }
+
+            $response = Http::withHeaders($this->rapidApiHeaders($withCorrelator))
+                ->timeout(10)
+                ->post($this->apiUrl . $endpoint, $body);
+
+            Log::debug($label, [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+
+            if ($response->status() === 429) {
+                // Incrémente le compteur circuit breaker
+                \Illuminate\Support\Facades\Cache::put(
+                    self::CIRCUIT_BREAK_KEY,
+                    $cbCount + $attempt + 1,
+                    self::CIRCUIT_BREAK_TTL
+                );
+
+                if ($attempt >= self::MAX_RETRIES) {
+                    Log::warning("{$label} abandonné — rate limit après " . (self::MAX_RETRIES + 1) . " tentatives");
+                    throw new \RuntimeException("HTTP 429: {$response->body()}");
+                }
+
+                $attempt++;
+                continue;
+            }
+
+            // Succès ou autre erreur → réinitialise le circuit breaker
+            \Illuminate\Support\Facades\Cache::forget(self::CIRCUIT_BREAK_KEY);
+
+            return $response; // L'appelant vérifie $r->failed() lui-même
+        }
+    }
+
     private function fetchSandboxPayload(string $phoneNumber): array
     {
         $results = [
@@ -82,18 +155,12 @@ class NokiaService
             }
 
             $body = $r->json();
-            $results['sim_swap'] = [
-                /// 'swapped'     => isset($body['latestSimChange']),
-                /*
-                'days_ago'    => isset($body['latestSimChange'])
-                    ? now()->diffInDays(\Carbon\Carbon::parse($body['latestSimChange']))
-                    : null,
-                */
 
-                'days_ago' => isset($body['latestSimChange'])
-                    ? abs(now()->diffInHours(\Carbon\Carbon::parse($body['latestSimChange']))) / 24
-                    : null,
-                    
+            // On stocke UNIQUEMENT la date brute ici.
+            // days_ago sera calculé à l'étape ② APRÈS avoir confirmé swapped=true.
+            // Calculer days_ago ici (avant de connaître swapped) causait le bug
+            // DATA_INCONSISTENCY : swapped=false + days_ago=0.007 → reject injuste.
+            $results['sim_swap'] = [
                 'raw_date'    => $body['latestSimChange'] ?? null,
                 'api_version' => 'camara-sim-swap-v0',
             ];
@@ -123,12 +190,27 @@ class NokiaService
                 throw new \RuntimeException("HTTP {$r->status()}: {$r->body()}");
             }
 
-            // DÉFINIS LA CLÉ SWAPPED ICI UNIQUEMENT :
+            // swapped = SOURCE DE VÉRITÉ (toujours depuis /check, jamais depuis /retrieve)
             $isSwapped = $r->json('swapped', false);
             $results['sim_swap']['swapped']            = $isSwapped;
             $results['sim_swap']['verified_swap_240h'] = $isSwapped;
 
-          //  $results['sim_swap']['verified_swap_240h'] = $r->json('swapped', false);
+            // FIX DATA_INCONSISTENCY :
+            // days_ago n'est calculé QUE si swapped=true.
+            // Si swapped=false, raw_date est aussi purgé → aucune règle ne peut
+            // utiliser une date qui ne correspond pas à un vrai swap.
+            if ($isSwapped && isset($results['sim_swap']['raw_date'])) {
+                try {
+                    $results['sim_swap']['days_ago'] = abs(
+                        now()->diffInHours(\Carbon\Carbon::parse($results['sim_swap']['raw_date']))
+                    ) / 24;
+                } catch (\Exception) {
+                    $results['sim_swap']['days_ago'] = null;
+                }
+            } else {
+                unset($results['sim_swap']['raw_date']);
+                $results['sim_swap']['days_ago'] = null;
+            }
 
         } catch (\Exception $e) {
             Log::warning('Nokia SIM Swap check failed', ['error' => $e->getMessage()]);
