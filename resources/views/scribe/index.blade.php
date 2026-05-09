@@ -157,6 +157,79 @@ et renvoie une décision unifiée (ex: <em>"Score 85 % — Approuvé"</em> ou <e
 <th>Cas d'usage</th>
 </tr>
 </thead>
+
+<style>
+  .nk-v-container { font-family: 'Segoe UI', system-ui, sans-serif; padding: 10px 0; max-width: 100%; }
+  .nk-v-title { color: #2b579a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; font-size: 0.95em; font-weight: 600; }
+  
+  /* Stack Vertical */
+  .nk-stack { display: flex; flex-direction: column; gap: 8px; }
+  
+  /* Lignes */
+  .nk-row { 
+    display: flex; 
+    align-items: center; 
+    padding: 10px 15px; 
+    border-radius: 6px; 
+    border: 1px solid;
+    gap: 15px;
+  }
+  
+  .nk-v-red { background: #fff5f5; border-color: #feb2b2; }
+  .nk-v-orange { background: #fffaf0; border-color: #fbd38d; }
+  .nk-v-green { background: #f0fff4; border-color: #9ae6b4; }
+  
+  /* Contenu de la ligne */
+  .nk-v-badge { font-weight: 800; font-size: 0.65rem; text-transform: uppercase; min-width: 110px; }
+  .nk-v-red .nk-v-badge { color: #c53030; }
+  .nk-v-orange .nk-v-badge { color: #975a16; }
+  .nk-v-green .nk-v-badge { color: #276749; }
+  
+  .nk-v-phone { font-family: monospace; font-weight: 700; font-size: 0.85em; color: #2d3748; background: rgba(255,255,255,0.6); padding: 2px 6px; border-radius: 4px; min-width: 100px; text-align: center; }
+  .nk-v-desc { font-size: 0.85rem; flex-grow: 1; }
+  .nk-v-red .nk-v-desc { color: #742a2a; }
+  .nk-v-orange .nk-v-desc { color: #744210; }
+  .nk-v-green .nk-v-desc { color: #22543d; }
+
+  /* Ajustement mobile : empilement interne si l'écran est très étroit */
+  @media (max-width: 480px) {
+    .nk-row { flex-direction: column; align-items: flex-start; gap: 5px; }
+    .nk-v-badge { min-width: auto; }
+  }
+</style>
+
+<div class="nk-v-container">
+  <div class="nk-v-title">🧪 Matrice de tests sandbox Nokia</div>
+  <div class="nk-stack">
+    
+    <div class="nk-row nk-v-red">
+      <div class="nk-v-badge">🔴 Rejet (Score 2)</div>
+      <div class="nk-v-phone">+99999901000</div>
+      <div class="nk-v-desc">SIM Swap récent &lt; 24h</div>
+    </div>
+
+    <div class="nk-row nk-v-red">
+      <div class="nk-v-badge">🔴 Rejet (Score 2)</div>
+      <div class="nk-v-phone">+99999992000</div>
+      <div class="nk-v-desc">Numéro inactif ou porté</div>
+    </div>
+
+    <div class="nk-row nk-v-orange">
+      <div class="nk-v-badge">🟠 Analyse IA</div>
+      <div class="nk-v-phone">+99999991000</div>
+      <div class="nk-v-desc">Roaming hors zone CEDEAO (Hongrie)</div>
+    </div>
+
+    <div class="nk-row nk-v-green">
+      <div class="nk-v-badge">🟢 Approuvé</div>
+      <div class="nk-v-phone">+99999991001</div>
+      <div class="nk-v-desc">Usage normal (Signaux stables)</div>
+    </div>
+
+  </div>
+</div>
+
+
 <tbody>
 <tr>
 <td>Micro-crédit / IMF</td>

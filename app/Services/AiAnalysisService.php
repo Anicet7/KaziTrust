@@ -16,6 +16,32 @@ use Illuminate\Support\Facades\Log;
  *   3. Appel LLM (cas ambigus seuls)  → N tokens, ~2s
  *
  * ─────────────────────────────────────────────────────
+ * PROVIDERS SUPPORTÉS (v5)
+ * ─────────────────────────────────────────────────────
+ * [NEW-P1] Groq — Ultra-rapide (~200ms), JSON mode natif,
+ *          Llama 3.3 70B / Llama 3.1 8B / DeepSeek R1 70B.
+ *          Quota gratuit : 1 000 req/jour (Llama 3.3 70B).
+ *          API : https://api.groq.com/openai/v1 (compatible OpenAI)
+ *          Recommandé pour la production anti-fraude.
+ *
+ * [NEW-P2] Mistral — JSON mode natif, modèles open source,
+ *          open-mistral-nemo gratuit (Experiment plan).
+ *          API : https://api.mistral.ai/v1 (compatible OpenAI)
+ *          Nécessite un compte La Plateforme + vérif. téléphone.
+ *
+ * [NEW-P3] OpenRouter — Gateway vers 50+ modèles :free
+ *          (Llama, Gemma, Qwen, Mistral...).
+ *          Quota gratuit : 50 req/jour / 1 000 req/jour avec topup $10.
+ *          API : https://openrouter.ai/api/v1 (compatible OpenAI)
+ *          Idéal pour tests ou fallback.
+ *
+ * [NEW-P4] Cerebras — Inférence ultra-rapide (wafer-scale),
+ *          Llama 3.3 70B / Llama 3.1 8B.
+ *          Quota gratuit : 14 400 req/jour, 1M tokens/jour.
+ *          API : https://api.cerebras.ai/v1 (compatible OpenAI)
+ *          Concurrent direct de Groq sur la vitesse.
+ *
+ * ─────────────────────────────────────────────────────
  * OPTIMISATIONS v4
  * ─────────────────────────────────────────────────────
  * [FIX-A1] Mapping connectivityStatus → technology :
@@ -68,6 +94,9 @@ class AiAnalysisService
 
     private const RATE_LIMIT_MAX    = 3;
     private const RATE_LIMIT_WINDOW = 3600;
+
+    // [NEW-P1..P4] Tous les providers supportés (utilisé dans clearQuotaCache)
+    private const ALL_PROVIDERS = ['openai', 'gemini', 'claude', 'groq', 'mistral', 'openrouter', 'cerebras'];
 
     // [FIX-A1] Table de normalisation connectivityStatus Nokia → technology interne
     private const CONNECTIVITY_MAP = [
@@ -151,11 +180,16 @@ class AiAnalysisService
         Cache::put($rateLimitKey, $callCount + 1, self::RATE_LIMIT_WINDOW);
 
         try {
+            // [NEW-P1..P4] Routage vers le provider configuré
             $result = match ($app->llm_provider) {
-                'openai' => $this->callOpenAI($prompt, $app->llm_api_key, $settings),
-                'gemini' => $this->callGemini($prompt, $app->llm_api_key, $settings),
-                'claude' => $this->callClaude($prompt, $app->llm_api_key, $settings),
-                default  => $this->callOpenAI($prompt, $app->llm_api_key, $settings),
+                'openai'     => $this->callOpenAI($prompt, $app->llm_api_key, $settings),
+                'gemini'     => $this->callGemini($prompt, $app->llm_api_key, $settings),
+                'claude'     => $this->callClaude($prompt, $app->llm_api_key, $settings),
+                'groq'       => $this->callGroq($prompt, $app->llm_api_key, $settings),
+                'mistral'    => $this->callMistral($prompt, $app->llm_api_key, $settings),
+                'openrouter' => $this->callOpenRouter($prompt, $app->llm_api_key, $settings),
+                'cerebras'   => $this->callCerebras($prompt, $app->llm_api_key, $settings),
+                default      => $this->callOpenAI($prompt, $app->llm_api_key, $settings),
             };
 
             if (!$this->isValidResponse($result['response'] ?? [])) {
@@ -412,6 +446,27 @@ class AiAnalysisService
         $amount     = (float)($context['transaction_amount'] ?? 0);
         $currency   = strtoupper($context['currency'] ?? 'XOF');
 
+
+        // ── 0. MONTANT ABSOLUMENT EXTRÊME — vérification humaine obligatoire
+        $absoluteThreshold = match ($currency) {
+            'EUR', 'USD' => 50_000,     //  50 000 €/$ → humain obligatoire
+            'XOF', 'XAF' => 5_000_000, //   5 000 000 XOF (~7 600 €)
+            'NGN'        => 25_000_000,
+            default      => 5_000_000,
+        };
+
+        if ($amount >= $absoluteThreshold) {
+            return $this->rulesResponse(
+                'manual_review', 40,
+                "Montant extrême ({$amount} {$currency}) : vérification humaine obligatoire quelle que soit la qualité des signaux.",
+                ['extreme_amount'],
+                'Vérification humaine obligatoire.',
+                'rule:extreme_amount_mandatory_review'
+            );
+        }
+
+
+
         $highAmountThreshold = match ($currency) {
             'EUR', 'USD' => 500,
             'XOF', 'XAF' => 50_000,
@@ -421,13 +476,6 @@ class AiAnalysisService
         $isHighAmount = $amount > $highAmountThreshold;
 
         // [FIX-B1] Seuil micro-montant relevé de 10% → 20% du seuil haut.
-        //
-        //   Avant (0.10) : micro ≤  5 000 XOF  |  ≤  50 USD  |  ≤  25 000 NGN
-        //   Après (0.20) : micro ≤ 10 000 XOF  |  ≤ 100 USD  |  ≤  50 000 NGN
-        //
-        //   Impact : une transaction de 10 000 XOF avec signaux propres
-        //   est maintenant approuvée par rule:micro_amount_safe au lieu
-        //   de tomber dans le LLM.
         $isMicroAmount = $amount > 0 && $amount <= ($highAmountThreshold * 0.20);
 
         $getCountryName = function ($roaming) {
@@ -482,15 +530,6 @@ class AiAnalysisService
         }
 
         // [FIX-B2] Nouvelle règle all_clear_no_tech
-        //
-        //  Contexte : Nokia Device Connectivity peut ne pas renvoyer de
-        //  technologie (null après [FIX-A1]) pour des raisons légitimes.
-        //  Si tous les autres signaux sont verts ET que le montant reste
-        //  sous le seuil haut, on approuve avec un score légèrement réduit
-        //  (88 au lieu de 95) plutôt que de consommer des tokens LLM
-        //  pour une décision évidente.
-        //
-        //  Conditions : mêmes allClearSignals + numéro > 30j + montant non-élevé.
         if ($allClearSignals
             && ($daysActive === null || $daysActive > 30)
             && $tech === null
@@ -575,6 +614,7 @@ class AiAnalysisService
         $amount   = (float)($context['transaction_amount'] ?? 0);
         $currency = strtoupper($context['currency'] ?? $context['transaction_currency'] ?? 'XOF');
 
+    
         $compactSignals = array_filter([
             'sim_swap' => $signals['sim_swap'] ?? null,
             'network'  => $signals['network']  ?? null,
@@ -705,12 +745,19 @@ PROMPT;
     private function throwIfQuotaExceeded(int $status, string $body, string $provider): void
     {
         if ($status !== 429) return;
+
+        // [NEW-P1..P4] Hints enrichis pour tous les providers
         $hint = match ($provider) {
-            'openai' => 'Ajoutez un moyen de paiement sur platform.openai.com/billing',
-            'gemini' => 'Vérifiez vos quotas sur aistudio.google.com',
-            'claude' => 'Vérifiez votre plan sur console.anthropic.com/settings/billing',
-            default  => 'Vérifiez la facturation de votre fournisseur IA',
+            'openai'     => 'Ajoutez un moyen de paiement sur platform.openai.com/billing',
+            'gemini'     => 'Vérifiez vos quotas sur aistudio.google.com',
+            'claude'     => 'Vérifiez votre plan sur console.anthropic.com/settings/billing',
+            'groq'       => 'Quota Groq atteint (1 000 req/jour sur Llama 3.3 70B). Voir console.groq.com',
+            'mistral'    => 'Quota Mistral atteint (Experiment plan). Voir console.mistral.ai',
+            'openrouter' => 'Quota OpenRouter atteint (50 req/jour free tier). Voir openrouter.ai/settings',
+            'cerebras'   => 'Quota Cerebras atteint (14 400 req/jour). Voir inference.cerebras.ai',
+            default      => 'Vérifiez la facturation de votre fournisseur IA',
         };
+
         throw new AiQuotaExceededException("Quota {$provider} dépassé. {$hint}");
     }
 
@@ -719,22 +766,17 @@ PROMPT;
     //
     //  [FIX-A2] Exposé en public static pour les commandes artisan.
     //
-    //  Problème résolu : changer la clé API dans la config ne vide PAS
-    //  automatiquement kazitrust:quota_pause:{app_id}:{provider}.
-    //  Le circuit breaker et la pause quota restent actifs même avec
-    //  une nouvelle clé, ce qui donne l'impression que "ça ne marche
-    //  toujours pas" après rotation de clé.
-    //
     //  Usage dans App\Console\Commands\ClearAiCache :
-    //    AiAnalysisService::clearQuotaCache($appId, 'gemini');
+    //    AiAnalysisService::clearQuotaCache($appId, 'groq');
     //
     //  CLI :
-    //    php artisan kazitrust:clear-ai-cache {app_id} {--provider=gemini}
+    //    php artisan kazitrust:clear-ai-cache {app_id} {--provider=groq}
     // ═══════════════════════════════════════════════════
 
     public static function clearQuotaCache(int|string $appId, ?string $provider = null): array
     {
-        $providers = $provider ? [$provider] : ['openai', 'gemini', 'claude'];
+        // [NEW-P1..P4] Tous les providers inclus dans le reset global
+        $providers = $provider ? [$provider] : self::ALL_PROVIDERS;
         $cleared   = [];
 
         foreach ($providers as $p) {
@@ -761,6 +803,7 @@ PROMPT;
     //  APPELS LLM
     // ═══════════════════════════════════════════════════
 
+    // ── OpenAI ──────────────────────────────────────────
     private function callOpenAI(string $prompt, string $apiKey, array $settings): array
     {
         $response = Http::withToken($apiKey)
@@ -790,6 +833,7 @@ PROMPT;
         ];
     }
 
+    // ── Google Gemini ────────────────────────────────────
     private function callGemini(string $prompt, string $apiKey, array $settings): array
     {
         if (config('app.debug')) {
@@ -824,6 +868,7 @@ PROMPT;
         ];
     }
 
+    // ── Anthropic Claude ─────────────────────────────────
     private function callClaude(string $prompt, string $apiKey, array $settings): array
     {
         $response = Http::withHeaders([
@@ -851,17 +896,208 @@ PROMPT;
         ];
     }
 
+    // ── [NEW-P1] Groq ─────────────────────────────────────
+    //
+    //  API 100% compatible OpenAI. Spécialité : inférence ultra-rapide
+    //  (~200ms) grâce aux puces LPU. JSON mode natif supporté.
+    //
+    //  Quota free tier (mai 2026) :
+    //   - llama-3.3-70b-versatile : 1 000 req/jour, 12 000 tokens/min
+    //   - llama-3.1-8b-instant    : 14 400 req/jour, 6 000 tokens/min
+    //   - deepseek-r1-distill-llama-70b : 1 000 req/jour
+    //
+    //  Clé : console.groq.com → API Keys (format gsk_...)
+    // ─────────────────────────────────────────────────────
+    private function callGroq(string $prompt, string $apiKey, array $settings): array
+    {
+        $response = Http::withToken($apiKey)
+            ->timeout(15) // Groq est ultra-rapide, 15s est largement suffisant
+            ->post('https://api.groq.com/openai/v1/chat/completions', [
+                'model'           => $settings['model'] ?? 'llama-3.3-70b-versatile',
+                'temperature'     => (float)($settings['temperature'] ?? 0.1),
+                'max_tokens'      => 200,
+                'messages'        => [
+                    ['role' => 'system', 'content' => 'Expert anti-fraude Afrique de l\'Ouest. JSON brut uniquement, aucun commentaire.'],
+                    ['role' => 'user',   'content' => $prompt],
+                ],
+                'response_format' => ['type' => 'json_object'],
+            ]);
+
+        $this->throwIfQuotaExceeded($response->status(), $response->body(), 'groq');
+        if ($response->failed()) {
+            throw new \RuntimeException("Groq HTTP {$response->status()}: {$response->body()}");
+        }
+
+        $data = $response->json();
+        $raw  = $data['choices'][0]['message']['content'] ?? '{}';
+        return [
+            'response'    => $this->parseJsonSafe($raw),
+            'token_count' => $data['usage']['total_tokens'] ?? 0,
+            'raw'         => $raw,
+        ];
+    }
+
+    // ── [NEW-P2] Mistral (La Plateforme) ──────────────────
+    //
+    //  API compatible OpenAI. JSON mode natif via response_format.
+    //  Plan "Experiment" = gratuit avec opt-in formation des données.
+    //  Nécessite une vérification téléphone sur console.mistral.ai.
+    //
+    //  Quota free tier :
+    //   - 1 req/s, 500 000 tokens/min, 1 milliard tokens/mois
+    //   - open-mistral-nemo : gratuit (12B, très rapide)
+    //   - mistral-small-latest : gratuit
+    //
+    //  Clé : console.mistral.ai → API Keys (format aléatoire)
+    // ─────────────────────────────────────────────────────
+    private function callMistral(string $prompt, string $apiKey, array $settings): array
+    {
+        $response = Http::withToken($apiKey)
+            ->timeout(30)
+            ->post('https://api.mistral.ai/v1/chat/completions', [
+                'model'           => $settings['model'] ?? 'open-mistral-nemo',
+                'temperature'     => (float)($settings['temperature'] ?? 0.1),
+                'max_tokens'      => 200,
+                'messages'        => [
+                    ['role' => 'system', 'content' => 'Expert anti-fraude Afrique de l\'Ouest. JSON brut uniquement, aucun commentaire.'],
+                    ['role' => 'user',   'content' => $prompt],
+                ],
+                'response_format' => ['type' => 'json_object'],
+            ]);
+
+        $this->throwIfQuotaExceeded($response->status(), $response->body(), 'mistral');
+        if ($response->failed()) {
+            throw new \RuntimeException("Mistral HTTP {$response->status()}: {$response->body()}");
+        }
+
+        $data = $response->json();
+        $raw  = $data['choices'][0]['message']['content'] ?? '{}';
+        return [
+            'response'    => $this->parseJsonSafe($raw),
+            'token_count' => $data['usage']['total_tokens'] ?? 0,
+            'raw'         => $raw,
+        ];
+    }
+
+    // ── [NEW-P3] OpenRouter ───────────────────────────────
+    //
+    //  Gateway vers 50+ modèles gratuits (:free suffix).
+    //  API compatible OpenAI. Headers HTTP-Referer et X-Title
+    //  sont requis pour respecter les CGU OpenRouter.
+    //
+    //  Quota free tier :
+    //   - 20 req/min, 50 req/jour (sans topup)
+    //   - 1 000 req/jour avec $10 de crédit lifetime
+    //
+    //  Modèles :free recommandés pour anti-fraude :
+    //   - meta-llama/llama-3.3-70b-instruct:free
+    //   - google/gemma-3-27b-it:free
+    //   - qwen/qwen3-235b-a22b:free
+    //
+    //  Note : pas de response_format JSON garanti sur tous les modèles
+    //  → parseJsonSafe() gère le nettoyage des balises markdown.
+    //
+    //  Clé : openrouter.ai/settings → API Keys (format sk-or-...)
+    // ─────────────────────────────────────────────────────
+    private function callOpenRouter(string $prompt, string $apiKey, array $settings): array
+    {
+        $response = Http::withToken($apiKey)
+            ->withHeaders([
+                'HTTP-Referer' => config('app.url', 'https://kazitrust.com'),
+                'X-Title'      => 'KaziTrust Anti-Fraude',
+            ])
+            ->timeout(30)
+            ->post('https://openrouter.ai/api/v1/chat/completions', [
+                'model'       => $settings['model'] ?? 'meta-llama/llama-3.3-70b-instruct:free',
+                'temperature' => (float)($settings['temperature'] ?? 0.1),
+                'max_tokens'  => 200,
+                'messages'    => [
+                    ['role' => 'system', 'content' => 'Expert anti-fraude Afrique de l\'Ouest. JSON brut uniquement, aucun commentaire.'],
+                    ['role' => 'user',   'content' => $prompt],
+                ],
+                // Note : response_format omis intentionnellement — tous les modèles :free
+                // ne le supportent pas. parseJsonSafe() nettoie les éventuels blocs markdown.
+            ]);
+
+        $this->throwIfQuotaExceeded($response->status(), $response->body(), 'openrouter');
+        if ($response->failed()) {
+            throw new \RuntimeException("OpenRouter HTTP {$response->status()}: {$response->body()}");
+        }
+
+        $data = $response->json();
+        $raw  = $data['choices'][0]['message']['content'] ?? '{}';
+        return [
+            'response'    => $this->parseJsonSafe($raw),
+            'token_count' => $data['usage']['total_tokens'] ?? 0,
+            'raw'         => $raw,
+        ];
+    }
+
+    // ── [NEW-P4] Cerebras ─────────────────────────────────
+    //
+    //  Inférence ultra-rapide sur wafer-scale chips.
+    //  API compatible OpenAI. JSON mode natif supporté.
+    //  Concurrent direct de Groq sur la latence.
+    //
+    //  Quota free tier :
+    //   - llama-3.3-70b : 30 req/min, 14 400 req/jour, 1M tokens/jour
+    //   - llama3.1-8b   : mêmes limites
+    //
+    //  Clé : inference.cerebras.ai → API Keys (format csk-...)
+    // ─────────────────────────────────────────────────────
+    private function callCerebras(string $prompt, string $apiKey, array $settings): array
+    {
+        $response = Http::withToken($apiKey)
+            ->timeout(15) // Cerebras très rapide, même timeout réduit que Groq
+            ->post('https://api.cerebras.ai/v1/chat/completions', [
+                'model'           => $settings['model'] ?? 'llama-3.3-70b',
+                'temperature'     => (float)($settings['temperature'] ?? 0.1),
+                'max_tokens'      => 200,
+                'messages'        => [
+                    ['role' => 'system', 'content' => 'Expert anti-fraude Afrique de l\'Ouest. JSON brut uniquement, aucun commentaire.'],
+                    ['role' => 'user',   'content' => $prompt],
+                ],
+                'response_format' => ['type' => 'json_object'],
+            ]);
+
+        $this->throwIfQuotaExceeded($response->status(), $response->body(), 'cerebras');
+        if ($response->failed()) {
+            throw new \RuntimeException("Cerebras HTTP {$response->status()}: {$response->body()}");
+        }
+
+        $data = $response->json();
+        $raw  = $data['choices'][0]['message']['content'] ?? '{}';
+        return [
+            'response'    => $this->parseJsonSafe($raw),
+            'token_count' => $data['usage']['total_tokens'] ?? 0,
+            'raw'         => $raw,
+        ];
+    }
+
     // ═══════════════════════════════════════════════════
     //  UTILITAIRES
     // ═══════════════════════════════════════════════════
 
+    /**
+     * Estime le coût d'un appel LLM.
+     * Les providers gratuits (Groq, Mistral, OpenRouter, Cerebras) retournent 0.
+     * Utile pour le reporting et la comparaison des coûts entre providers.
+     */
     public function estimateCost(int $tokens, string $provider): float
     {
         $prices = [
-            'openai' => 0.000150,
-            'gemini' => 0.000075,
-            'claude' => 0.000080,
+            // Providers payants — prix pour 1 000 tokens (USD)
+            'openai'     => 0.000150, // gpt-4o-mini input
+            'gemini'     => 0.000075, // gemini-2.0-flash
+            'claude'     => 0.000080, // claude-haiku
+
+            // [NEW-P1..P4] Providers gratuits — coût = 0
+            'groq'       => 0.0,      // Free tier — 1 000 req/jour
+            'mistral'    => 0.0,      // Free tier (Experiment plan)
+            'openrouter' => 0.0,      // Free tier — modèles :free
+            'cerebras'   => 0.0,      // Free tier — 14 400 req/jour
         ];
+
         return round(($tokens / 1000) * ($prices[$provider] ?? 0.000150), 6);
     }
 }
